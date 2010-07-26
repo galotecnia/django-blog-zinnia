@@ -10,6 +10,7 @@ from django.core.urlresolvers import reverse, NoReverseMatch
 
 from zinnia.models import Entry
 from zinnia.models import Category
+from zinnia.models import Blog
 from zinnia.managers import PUBLISHED
 from zinnia.settings import USE_BITLY
 from zinnia.settings import USE_TWITTER
@@ -18,8 +19,10 @@ from zinnia.settings import TWITTER_PASSWORD
 from zinnia.settings import PING_DIRECTORIES
 from zinnia.settings import SAVE_PING_DIRECTORIES
 from zinnia.ping import DirectoryPinger
+from zinnia.managers import entries_published
 
 
+#FIXME: Check authors behaviour in this file
 class CategoryAdmin(admin.ModelAdmin):
     fields = ('title', 'slug', 'description')
     list_display = ('title', 'slug', 'description')
@@ -30,19 +33,19 @@ class CategoryAdmin(admin.ModelAdmin):
 
 class EntryAdmin(admin.ModelAdmin):
     date_hierarchy = 'creation_date'
-    fieldsets = ((_('Content'), {'fields': ('title', 'content', 'image', 'status')}),
-                 (_('Options'), {'fields': ('authors', 'slug', 'excerpt', 'related',
+    fieldsets = ((_('Content'), {'fields': ('title', 'content', 'image', 'status', 'blog')}),
+                 (_('Options'), {'fields': ('slug', 'excerpt', 'related', 'author',
                                             'creation_date', 'start_publication',
                                             'end_publication', 'comment_enabled'),
                                  'classes': ('collapse', 'collapse-closed')}),
                  (_('Sorting'), {'fields': ('sites', 'categories', 'tags')}))
-    list_filter = ('categories', 'authors', 'status', 'comment_enabled',
-                   'creation_date', 'start_publication', 'end_publication')
+    list_filter = ('categories', 'status', 'comment_enabled',
+                   'creation_date', 'start_publication', 'end_publication', 'blog')
     list_display = ('get_title', 'get_authors', 'get_categories',
                     'get_tags', 'get_sites', 'comment_enabled',
                     'get_is_actual', 'get_is_visible', 'get_link',
                     'get_short_url', 'creation_date', 'last_update')
-    filter_horizontal = ('categories', 'authors', 'related')
+    filter_horizontal = ('categories', 'related')
     prepopulated_fields = {'slug': ('title', )}
     search_fields = ('title', 'excerpt', 'content', 'tags')
     actions = ['make_mine', 'make_published', 'make_hidden', 'close_comments',
@@ -62,14 +65,15 @@ class EntryAdmin(admin.ModelAdmin):
         return title
     get_title.short_description = _('title')
 
+    # FIXME: Use the entry author
     def get_authors(self, entry):
         """Return the authors in HTML"""
         try:
             authors = ['<a href="%s" target="blank">%s</a>' %
                        (reverse('zinnia_author_detail', args=[author.username]),
-                        author.username) for author in entry.authors.all()]
+                        author.username) for author in entry.blog.authors.all()]
         except NoReverseMatch:
-            authors = [author.username for author in entry.authors.all()]
+            authors = [author.username for author in entry.blog.authors.all()]
         return ', '.join(authors)
     get_authors.allow_tags = True
     get_authors.short_description = _('author(s)')
@@ -138,10 +142,10 @@ class EntryAdmin(admin.ModelAdmin):
             entry.excerpt = truncate_words(strip_tags(entry.content), 50)
 
         if entry.pk and not request.user.has_perm('zinnia.can_change_author'):
-            form.cleaned_data['authors'] = entry.authors.all()
+            form.cleaned_data['author'] = entry.author
 
-        if not form.cleaned_data.get('authors'):
-            form.cleaned_data['authors'].append(request.user)
+        if not form.cleaned_data.get('author'):
+            form.cleaned_data['author'] = request.user
 
         entry.last_update = datetime.now()
         entry.save()
@@ -154,7 +158,15 @@ class EntryAdmin(admin.ModelAdmin):
         queryset = super(EntryAdmin, self).queryset(request)
         if request.user.has_perm('zinnia.can_view_all'):
             return queryset
-        return request.user.entry_set.all()
+        return Entry.objects.filter(blog__in = request.user.blog_set.all())
+        #return request.user.entry_set.all()
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        """Filter queryset by blog_owner"""
+        if (request.user.is_superuser == False) and (db_field.name == "blog"):
+            kwargs["queryset"] = request.user.blog_set.all()
+            return db_field.formfield(**kwargs)
+        return super(EntryAdmin, self).formfield_for_foreignkey(db_field, request, **kwargs)
 
     def formfield_for_manytomany(self, db_field, request, **kwargs):
         """Filters the disposable authors"""
@@ -163,6 +175,10 @@ class EntryAdmin(admin.ModelAdmin):
                 kwargs['queryset'] = User.objects.filter(is_staff=True)
             else:
                 kwargs['queryset'] = User.objects.filter(pk=request.user.pk)
+        """Filter queryset by blog_onwer"""
+        if (request.user.is_superuser == False) and (db_field.name == "related"):
+            kwargs["queryset"] = Entry.published.filter(blog__authors = request.user)
+            return db_field.formfield(**kwargs)
 
         return super(EntryAdmin, self).formfield_for_manytomany(
             db_field, request, **kwargs)
@@ -184,8 +200,8 @@ class EntryAdmin(admin.ModelAdmin):
     def make_mine(self, request, queryset):
         """Set the entries to the user"""
         for entry in queryset:
-            if request.user not in entry.authors.all():
-                entry.authors.add(request.user)
+            if request.user not in entry.blog.authors.all():
+                entry.blog.authors.add(request.user)
     make_mine.short_description = _('Set the entries to the user')
 
     def make_published(self, request, queryset):
@@ -226,3 +242,4 @@ class EntryAdmin(admin.ModelAdmin):
 
 admin.site.register(Category, CategoryAdmin)
 admin.site.register(Entry, EntryAdmin)
+admin.site.register(Blog, )

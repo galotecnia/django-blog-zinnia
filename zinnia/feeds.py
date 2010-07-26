@@ -41,6 +41,10 @@ class EntryFeed(Feed):
     description_template= 'feeds/entry_description.html'
     feed_copyright = COPYRIGHT
 
+    def __init__(self, blog_owner=None, *args, **kwargs):
+        self.blog_owner = blog_owner
+        super(EntryFeed, self).__init__(*args, **kwargs)
+
     def item_pubdate(self, item):
         return item.creation_date
 
@@ -48,10 +52,10 @@ class EntryFeed(Feed):
         return [category.title for category in item.categories.all()]
 
     def item_author_name(self, item):
-        return item.authors.all()[0]
+        return item.blog.authors.all()[0]
 
     def item_author_email(self, item):
-        return item.authors.all()[0].email
+        return item.blog.authors.all()[0].email
 
     def item_author_link(self, item):
         return current_site.domain
@@ -85,10 +89,10 @@ class LatestEntries(EntryFeed):
     description = _('The latest entries for the site %s') % current_site.domain
 
     def link(self):
-        return reverse('zinnia_entry_archive_index')
+        return reverse('zinnia_entry_archive_index', args=[self.blog_owner])
 
     def items(self):
-        return Entry.published.all()
+        return Entry.published.filter(blog__blog_name = self.blog_owner)
 
 
 class CategoryEntries(EntryFeed):
@@ -98,10 +102,10 @@ class CategoryEntries(EntryFeed):
         return get_object_or_404(Category, slug=slug)
 
     def items(self, obj):
-        return obj.entries_published_set()
+        return obj.entries_published_set(self.blog_owner)
 
     def link(self, obj):
-        return obj.get_absolute_url()
+        return obj.get_absolute_url(self.blog_owner)
 
     def title(self, obj):
         return _('Entries for the category %s') % obj.title
@@ -117,10 +121,10 @@ class AuthorEntries(EntryFeed):
         return get_object_or_404(User, username=username)
 
     def items(self, obj):
-        return entries_published(obj.entry_set)
+        return entries_published(obj.entry_set, self.blog_owner)
 
     def link(self, obj):
-        return reverse('zinnia_author_detail', args=[obj.username])
+        return reverse('zinnia_author_detail', args=[self.blog_owner, obj.username])
 
     def title(self, obj):
         return _('Entries for author %s') % obj.username
@@ -136,10 +140,10 @@ class TagEntries(EntryFeed):
         return get_object_or_404(Tag, name=slug)
 
     def items(self, obj):
-        return TaggedItem.objects.get_by_model(Entry.published.all(), obj)
+        return TaggedItem.objects.get_by_model(Entry.published.filter(blog__blog_name), obj)
 
     def link(self, obj):
-        return reverse('zinnia_tag_detail', args=[obj.name])
+        return reverse('zinnia_tag_detail', args=[self.blog_owner, obj.name])
 
     def title(self, obj):
         return _('Entries for the tag %s') % obj.name
@@ -155,10 +159,10 @@ class SearchEntries(EntryFeed):
         return slug
 
     def items(self, obj):
-        return Entry.published.search(obj)
+        return Entry.published.search(obj, self.blog_owner)
 
     def link(self, obj):
-        return '%s?pattern=%s' % (reverse('zinnia_entry_search'), obj)
+        return '%s?pattern=%s' % (reverse('zinnia_entry_search', args=[self.blog_owner]), obj)
 
     def title(self, obj):
         return _("Results of the search for %s") % obj

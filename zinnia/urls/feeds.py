@@ -11,6 +11,7 @@ from zinnia.feeds import AuthorEntries, AtomAuthorEntries
 from zinnia.settings import FEEDS_FORMAT
 
 
+urlpatterns = patterns('',)
 if FEEDS_FORMAT == 'atom':
     urlpatterns = patterns('',
                            url(r'^latest/$', AtomLatestEntries(),

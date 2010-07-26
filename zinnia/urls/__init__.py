@@ -10,5 +10,6 @@ urlpatterns = patterns('',
                        url(r'^sitemap/', include('zinnia.urls.sitemap')),
                        url(r'^', include('zinnia.urls.capabilities')),
                        url(r'^', include('zinnia.urls.entries')),
+                       url(r'^', include('zinnia.urls.blogs')),
                        )
 

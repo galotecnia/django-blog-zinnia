@@ -1,5 +1,6 @@
 """Views for zinnia entries"""
 from django.views.generic.list_detail import object_list
+from django.views.generic.date_based import object_detail
 from django.views.generic.date_based import archive_year
 from django.views.generic.date_based import archive_month
 from django.views.generic.date_based import archive_day
@@ -16,3 +17,4 @@ entry_month = update_queryset(archive_month, Entry.published.all)
 
 entry_day = update_queryset(archive_day, Entry.published.all)
 
+entry_detail = update_queryset(object_detail, Entry.published.all)

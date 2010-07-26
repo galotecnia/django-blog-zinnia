@@ -19,6 +19,18 @@ from zinnia.settings import USE_BITLY
 from zinnia.settings import UPLOAD_TO
 
 
+class Blog(models.Model):
+    """Authors and name of a blog"""
+    authors = models.ManyToManyField(User, verbose_name=_('authors'),
+                                     blank=True, null=False,) 
+    blog_name = models.CharField(_('Blog name'), max_length=50, unique=True)
+
+    def __unicode__(self):
+        return self.blog_name
+
+    def get_last_entries(self):
+        return self.entry_set.filter(status = PUBLISHED).order_by('-creation_date')[:3]
+
 class Category(models.Model):
     """Category object for Entry"""
 
@@ -26,16 +38,16 @@ class Category(models.Model):
     slug = models.SlugField(help_text=_('used for publication'))
     description = models.TextField(_('description'), blank=True)
 
-    def entries_published_set(self):
+    def entries_published_set(self, blog_slug):
         """Return only the entries published"""
-        return entries_published(self.entry_set)
+        return entries_published(self.entry_set.all(), blog_slug)
 
     def __unicode__(self):
         return self.title
 
     @models.permalink
-    def get_absolute_url(self):
-        return ('zinnia_category_detail', (self.slug, ))
+    def get_absolute_url(self, blog_slug = ''):
+        return ('zinnia_category_detail', (self.slug, blog_slug))
 
     class Meta:
         verbose_name = _('category')
@@ -63,8 +75,8 @@ class Entry(models.Model):
                                      blank=True, null=True)
 
     slug = models.SlugField(help_text=_('used for publication'))
-    authors = models.ManyToManyField(User, verbose_name=_('authors'),
-                                     blank=True, null=False)
+    blog = models.ForeignKey(Blog, null=True)
+    author = models.ForeignKey(User, verbose_name =_('author'))
     status = models.IntegerField(choices=STATUS_CHOICES, default=DRAFT)
     comment_enabled = models.BooleanField(_('comment enabled'), default=True)
 
@@ -147,9 +159,16 @@ class Entry(models.Model):
     def __unicode__(self):
         return '%s: %s' % (self.title, self.get_status_display())
 
+    def authors(self):
+        return self.blog.authors.all()
+
+    def get_authors(self):
+        return self.authors()
+
     @models.permalink
     def get_absolute_url(self):
         return ('zinnia_entry_detail', (), {
+            'blog_slug': self.blog.blog_name, 
             'year': self.creation_date.strftime('%Y'),
             'month': self.creation_date.strftime('%m'),
             'day': self.creation_date.strftime('%d'),

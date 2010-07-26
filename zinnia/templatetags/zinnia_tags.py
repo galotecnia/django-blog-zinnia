@@ -9,6 +9,10 @@ from urllib import urlencode
 from datetime import datetime
 
 from django.template import Library
+from django.template import Node
+
+from django import template
+
 
 from zinnia.models import Entry
 from zinnia.models import Category
@@ -157,4 +161,48 @@ def get_gravatar(email, size, rating, default=None):
 
     url = '%s?%s' % (url, urlencode(options))
     return url.replace('&', '&amp;')
+
+class GetBlogNamesNode(Node):
+    """User's blog_names)"""
+    def __init__(self, user):
+        self.user = template.Variable(user)
+
+    def render(self, context):
+        context['blog_names'] = []
+        try:
+            user = self.user.resolve(context)
+        except template.variabledoesnotexist:
+            return ''
+        if not user.is_anonymous():
+            context['blog_names'] = [blog.blog_name for blog in user.blog_set.all()]
+        return ''
+
+class ShowContentNode(Node):
+    """Add a context variable if we have to reduce the length of an entry"""
+    def __init__(self, object):
+        self.object = template.Variable(object)
+
+    def render(self, context):
+        try:
+            object = self.object.resolve(context)
+        except template.variabledoesnotexist:
+            return ''
+        context['acortar'] = len(object.content) > 100
+
+
+@register.tag(name="show_content")
+def show_content(parser, token):
+    try:
+        templatetag_name, object = token.split_contents()
+    except ValueError:
+        raise template.TemplateSyntaxError, "%r tag requires exactly two arguments" % token.contents.split()[0]
+    return ShowContentNode(object)
+
+@register.tag(name="get_blog_names")
+def get_blog_names(parser, token):
+    try:
+        templatetag_name, user = token.split_contents()
+    except ValueError:
+        raise template.TemplateSyntaxError, "%r tag requires exactly two arguments" % token.contents.split()[0]
+    return GetBlogNamesNode(user)
 

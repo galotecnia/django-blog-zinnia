@@ -36,3 +36,4 @@ except ImportError:
 TWITTER_USER = getattr(settings, 'TWITTER_USER', '')
 TWITTER_PASSWORD = getattr(settings, 'TWITTER_PASSWORD', '')
 
+ZINNIA_BLOG_PATTERN = "[-\w ]+"

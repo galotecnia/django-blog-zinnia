@@ -19,19 +19,22 @@ def tags_published():
 def authors_published():
     """Return the published authors"""
     from django.contrib.auth.models import User
+    from zinnia.models import Entry
 
     author_ids = [user.pk for user in User.objects.all()
-                  if user.entry_set.filter(status=PUBLISHED).count()]
+#                  if user.blog_set.filter(status=PUBLISHED).count()]
+                  if Entry.objects.filter(status=PUBLISHED).count()]
     return User.objects.filter(pk__in=author_ids)
 
 
-def entries_published(queryset):
+def entries_published(queryset): #, blog_owner):
     """Return only the entries published"""
     now = datetime.now()
     return queryset.filter(status=PUBLISHED,
                            start_publication__lte=now,
                            end_publication__gt=now,
-                           sites=Site.objects.get_current())
+                           sites=Site.objects.get_current(),
+                           ) # blog__blog_name = blog_owner)
 
 
 class EntryPublishedManager(models.Manager):
@@ -39,9 +42,10 @@ class EntryPublishedManager(models.Manager):
 
     def get_query_set(self):
         return entries_published(
-            super(EntryPublishedManager, self).get_query_set())
+            super(EntryPublishedManager, self).get_query_set(),
+            )
 
-    def search(self, pattern):
+    def search(self, pattern, blog_owner):
         lookup = None
         for pattern in pattern.split():
             q = models.Q(content__icontains=pattern) | \
@@ -52,4 +56,5 @@ class EntryPublishedManager(models.Manager):
             else:
                 lookup |= q
 
+        #return self.get_query_set(blog_owner).filter(lookup)
         return self.get_query_set().filter(lookup)
