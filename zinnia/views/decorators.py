@@ -9,13 +9,11 @@ def update_queryset(view, queryset,
 
     def wrap(*args, **kwargs):
         """regenerate the queryset before passing it to the view."""
-        print "KWARGS", kwargs
         filter = {}
         if 'blog_slug' in kwargs:
             blog_slug = kwargs.pop('blog_slug')
             filter.update({'blog__blog_name': blog_slug})
         kwargs[queryset_parameter] = queryset().filter(**filter)
-        print "ENTRY QUERYSET", kwargs[queryset_parameter]
         return view(*args, **kwargs)
 
     return wrap
