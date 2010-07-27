@@ -13,7 +13,7 @@ from django.template import Node
 
 from django import template
 
-
+from zinnia.settings import ZINNIA_BLOG_ACTIVE
 from zinnia.models import Entry
 from zinnia.models import Category
 from zinnia.comparison import VectorBuilder
@@ -108,7 +108,8 @@ def get_calendar_entries(context, year=None, month=None,
     if not year or not month:
         date_month = context.get('month') or context.get('day') or datetime.today()
         year, month = date_month.timetuple()[:2]
-
+    
+    blog_slug = context.get('blog_slug')
     try:
         from zinnia.templatetags.zcalendar import ZinniaCalendar
     except ImportError:
@@ -133,7 +134,7 @@ def get_calendar_entries(context, year=None, month=None,
     return {'template': template,
             'next_month': next_month,
             'previous_month': previous_month,
-            'calendar': calendar.formatmonth(year, month)}
+            'calendar': calendar.formatmonth(year, month, blog_slug = blog_slug)}
 
 @register.inclusion_tag('zinnia/tags/dummy.html',
                         takes_context=True)
@@ -141,11 +142,14 @@ def zinnia_breadcrumbs(context, separator='/', root_name='Blog',
                        template='zinnia/tags/breadcrumbs.html',):                       
     """Return a breadcrumb for the application"""
     from zinnia.templatetags.zbreadcrumbs import retrieve_breadcrumbs
-
+    
+    blog_slug = None
     path = context['request'].path
     page_object = context.get('object') or context.get('category') or \
-                  context.get('tag') or context.get('author')
-    breadcrumbs = retrieve_breadcrumbs(path, page_object, root_name)
+        context.get('tag') or context.get('author') or context.get('blog')
+    if ZINNIA_BLOG_ACTIVE:
+        blog_slug = context.get('blog_slug')
+    breadcrumbs = retrieve_breadcrumbs(path, page_object, root_name, blog_slug)
 
     return {'template': template,
             'separator': separator,

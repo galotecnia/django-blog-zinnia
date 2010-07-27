@@ -20,6 +20,6 @@ blog_index_no_content = {'queryset': Blog.objects.all(),
                }
 
 urlpatterns = patterns('',
-                        url(r'^list/', object_list, blog_index_no_content, name='blog_list'), 
                         url(r'^$', object_list, blog_index, name='blogs'),                  
+                        url(r'^list/', object_list, blog_index_no_content, name='blog_list'), 
                         )

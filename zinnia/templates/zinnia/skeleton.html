@@ -39,9 +39,11 @@
 	  </a>
 	</div>
 	<h1>
-	  <a href="{% url zinnia_entry_archive_index %}" title="Zinnia's Blog">
+        {% block main_title %}
+	        <a href="{% if blog_slug %}{% url zinnia_entry_archive_index blog_slug %}{% else %}{% url zinnia_entry_archive_index %}{% endif %}" title="Zinnia's Blog">
 	    Zinnia's Blog
 	  </a>
+        {% endblock %}
 	</h1>
 	<blockquote>
 	  <p>Just another Zinnia weblog.</p>

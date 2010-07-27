@@ -1,5 +1,7 @@
 """Decorators for zinnia.views"""
 
+from zinnia.settings import ZINNIA_BLOG_ACTIVE
+
 def update_queryset(view, queryset,
                     queryset_parameter='queryset'):
     """decorator around views based on a queryset
@@ -12,7 +14,10 @@ def update_queryset(view, queryset,
         filter = {}
         if 'blog_slug' in kwargs:
             blog_slug = kwargs.pop('blog_slug')
-            filter.update({'blog__blog_name': blog_slug})
+            if ZINNIA_BLOG_ACTIVE and blog_slug:
+                filter.update({'blog__blog_name': blog_slug})
+                # blog_slug added as a context variable
+                kwargs['extra_context'] = {'blog_slug': blog_slug}
         kwargs[queryset_parameter] = queryset().filter(**filter)
         return view(*args, **kwargs)
 

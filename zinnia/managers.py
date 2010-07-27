@@ -22,19 +22,18 @@ def authors_published():
     from zinnia.models import Entry
 
     author_ids = [user.pk for user in User.objects.all()
-#                  if user.blog_set.filter(status=PUBLISHED).count()]
-                  if Entry.objects.filter(status=PUBLISHED).count()]
+        if Entry.objects.filter(status=PUBLISHED, author = user).count()]
     return User.objects.filter(pk__in=author_ids)
 
 
-def entries_published(queryset): #, blog_owner):
+def entries_published(queryset): 
     """Return only the entries published"""
     now = datetime.now()
     return queryset.filter(status=PUBLISHED,
                            start_publication__lte=now,
                            end_publication__gt=now,
                            sites=Site.objects.get_current(),
-                           ) # blog__blog_name = blog_owner)
+                           ) 
 
 
 class EntryPublishedManager(models.Manager):
@@ -56,5 +55,4 @@ class EntryPublishedManager(models.Manager):
             else:
                 lookup |= q
 
-        #return self.get_query_set(blog_owner).filter(lookup)
         return self.get_query_set().filter(lookup)

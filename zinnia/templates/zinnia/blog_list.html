@@ -1,44 +1,24 @@
-{% extends "index.html" %}
+{% extends "zinnia/skeleton.html" %}
 {% load i18n zinnia_tags %}
 
-{% block title %}{% trans "Blog list" %}{% endblock %}
+{% block main_title %}{% trans "Blog list" %}{% endblock %}
 
-{% block main_menu %}
-    <div id="nav1">
-        <ul>
-        <li>
-            <a href="{% url competition_list %}">{% trans "Competitions" %}</a>
-        </li>
-        <li class="current_page_item">
-            <a href="{% url blogs %}">Blogs</a>
-        </li>
-        <li>
-            <a href="{% url dinette_category %}">{% trans "Forums" %}</a>
-        </li>
-        </ul>
-        <div class="clearer">&nbsp;</div>
-    </div>
-{% endblock main_menu %}
-
-{% block body %}
+{% block content %}
 <h2>{% trans "Blog list" %}</h2>
 <div>
   <ul>
     {% for object in object_list %}
     <li>
-      <a href="{% url zinnia_entry_archive_index object.blog_name %}" title="{{ object.blog_name }}'s blog"><h4>{{ object.blog_name }} blog</h4></a> 
+        {% if ZINNIA_BLOG_ACTIVE %}
+            <a href="{% url zinnia_entry_archive_index object.slug %}">{{ object.blog_name }} blog</a> 
+        {% else %}
+            <a href="{% url zinnia_entry_archive_index %}">Another Zinnia blog</a> 
+        {% endif %}
         {% if default_list %}
             <ul>
             {% for entry in object.get_last_entries %}
                 <li>
-                    <a href="{{ entry.get_absolute_url }}">{{ entry.title }} ({{ entry.creation_date|date:"d F Y"|capfirst }})</a><br>
-                    {% show_content entry %}
-                    {% if acortar %}
-                        {{ entry.content|truncatewords_html:100|safe}} <a href="{{ entry.get_absolute_url }}">{% trans "More..." %}</a>
-                    {% else %}
-                        {{ entry.content|safe }}
-                    {% endif%}
-                    </p>
+                    <a href="{{ entry.get_absolute_url }}">{{ entry.title }} ({{ entry.creation_date|date:"d F Y"|capfirst }})</a>
                 </li>
             {% endfor %}
             </ul>

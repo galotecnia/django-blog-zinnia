@@ -23,7 +23,8 @@ class Blog(models.Model):
     """Authors and name of a blog"""
     authors = models.ManyToManyField(User, verbose_name=_('authors'),
                                      blank=True, null=False,) 
-    blog_name = models.CharField(_('Blog name'), max_length=50, unique=True)
+    blog_name = models.CharField(_('Blog name'), max_length=50)
+    slug = models.SlugField(help_text=_('used for publication'), default = '')
 
     def __unicode__(self):
         return self.blog_name

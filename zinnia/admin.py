@@ -30,6 +30,12 @@ class CategoryAdmin(admin.ModelAdmin):
     prepopulated_fields = {'slug': ('title', )}
     search_fields = ('title', 'description')
 
+class BlogAdmin(admin.ModelAdmin):
+    fields = ('authors', 'blog_name', 'slug')
+    list_display = ('blog_name', )
+    list_filter = ('blog_name', 'authors', 'slug')
+    prepopulated_fields = {'slug': ('blog_name', )}
+    search_fields = ('blog_name', 'authors')
 
 class EntryAdmin(admin.ModelAdmin):
     date_hierarchy = 'creation_date'
@@ -242,4 +248,4 @@ class EntryAdmin(admin.ModelAdmin):
 
 admin.site.register(Category, CategoryAdmin)
 admin.site.register(Entry, EntryAdmin)
-admin.site.register(Blog, )
+admin.site.register(Blog, BlogAdmin)
