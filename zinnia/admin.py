@@ -164,33 +164,42 @@ class EntryAdmin(admin.ModelAdmin):
             return queryset
         return Entry.objects.filter(author = request.user)
 
+
+    def remove_field(self, field):
+        """Remove from object admin form a given field"""
+        for name, content in self.fieldsets:
+            if content['fields'].__contains__(field):
+                content['fields'] = [i for i in content['fields'] if i != field]
+
     def formfield_for_dbfield(self, db_field, **kwargs):
         """Hide author field if you are not superadmin"""
         if db_field.name == 'author' and not kwargs['request'].user.is_superuser:
-            for name, content in self.fieldsets:
-                if content['fields'].__contains__('author'):
-                    content['fields'] = [i for i in content['fields'] if not i is 'author']
+            self.remove_field('author')
+            return
         return super(EntryAdmin, self).formfield_for_dbfield(db_field, **kwargs)
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
-        """Filter queryset by blog_owner"""
-        if ZINNIA_BLOG_ACTIVE and (request.user.is_superuser == False) \
-             and (db_field.name == "blog"):
-            kwargs["queryset"] = request.user.blog_set.all()
-            return db_field.formfield(**kwargs)
+        """Filter queryset by blog_owner, if needed"""
+        if db_field.name == "blog":
+            if ZINNIA_BLOG_ACTIVE and (request.user.is_superuser == False):
+                kwargs["queryset"] = request.user.blog_set.all()
+            elif not ZINNIA_BLOG_ACTIVE:
+                self.remove_field('blog')
+                return
         return super(EntryAdmin, self).formfield_for_foreignkey(db_field, request, **kwargs)
 
     def formfield_for_manytomany(self, db_field, request, **kwargs):
         """Filters the disposable authors"""
-        if db_field.name == 'authors':
-            if request.user.has_perm('zinnia.can_change_author'):
-                kwargs['queryset'] = User.objects.filter(is_staff=True)
-            else:
-                kwargs['queryset'] = User.objects.filter(pk=request.user.pk)
-        """Filter queryset by blog_onwer"""
-        if (request.user.is_superuser == False) and (db_field.name == "related"):
-            kwargs["queryset"] = Entry.published.filter(blog__authors = request.user)
-            return db_field.formfield(**kwargs)
+        if ZINNIA_BLOG_ACTIVE:
+            if db_field.name == 'authors':
+                if request.user.has_perm('zinnia.can_change_author'):
+                    kwargs['queryset'] = User.objects.filter(is_staff=True)
+                else:
+                    kwargs['queryset'] = User.objects.filter(pk=request.user.pk)
+            # Filter queryset by blog_onwer
+            if (request.user.is_superuser == False) and (db_field.name == "related"):
+                kwargs["queryset"] = Entry.published.filter(blog__authors = request.user)
+                return db_field.formfield(**kwargs)
 
         return super(EntryAdmin, self).formfield_for_manytomany(
             db_field, request, **kwargs)
@@ -213,7 +222,7 @@ class EntryAdmin(admin.ModelAdmin):
         """Set the entries to the user"""
         for entry in queryset:
             if request.user in entry.blog.authors.all():
-                entry.blog.author = request.user
+                entry.author = request.user
                 entry.save()
     make_mine.short_description = _('Set the entries to the user')
 

@@ -25,6 +25,7 @@ class Blog(models.Model):
                                      blank=True, null=False,) 
     blog_name = models.CharField(_('Blog name'), max_length=50)
     slug = models.SlugField(help_text=_('used for publication'), default = '')
+    description = models.TextField(_('description'), blank=True)
 
     def __unicode__(self):
         return self.blog_name
