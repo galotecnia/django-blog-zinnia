@@ -3,6 +3,10 @@
 
 {% block title %}{% trans "Sitemap" %}{% endblock %}
 
+{% block rss_link %}
+    <a href="{% url zinnia_entry_latest_feed %}" title="{% trans "RSS Feed of lastest entries" %}" class="link feeds">{% trans "RSS Feed" %}</a>    
+{% endblock %}
+
 {% block content %}
 <h2>{% trans "Sitemap" %}</h2>
 
@@ -11,7 +15,7 @@
   {% for category in categories %}
   <h4>{{ category }}</h4>
   <ul>
-    {% for entry in category.entries_published_set.all %}
+    {% for entry in category.entry_set.all %}
     <li>
       <a href="{{ entry.get_absolute_url }}" title="{{ entry.title }}">{{ entry.title }}</a>
       - {{ entry.comments.count }} {% trans "comment" %}{{ entry.comments.count|pluralize }}

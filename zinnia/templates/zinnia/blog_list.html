@@ -3,6 +3,10 @@
 
 {% block main_title %}{% trans "Blog list" %}{% endblock %}
 
+{% block rss_link %}
+    <a href="{% url zinnia_entry_latest_feed %}" title="{% trans "RSS Feed of lastest entries" %}" class="link feeds">{% trans "RSS Feed" %}</a>
+{% endblock %}
+
 {% block content %}
 <h2>{% trans "Blog list" %}</h2>
 <div>

@@ -25,39 +25,54 @@ vectors = VectorBuilder({'queryset': Entry.published.all(),
                         'fields': ['title', 'excerpt', 'content']})
 cache_entries_related = {}
 
-@register.inclusion_tag('zinnia/tags/dummy.html')
-def get_categories(template='zinnia/tags/categories.html'):
+@register.inclusion_tag('zinnia/tags/dummy.html', takes_context=True)
+def get_categories(context, template='zinnia/tags/categories.html'):
     """Return the categories"""
+    filter = {}
+    if ZINNIA_BLOG_ACTIVE:
+        blog_slug = context.get('blog').slug
+        filter.update({'entry__blog__slug': blog_slug})
     return {'template': template,
-            'categories': Category.objects.all()}
+            'categories': Category.objects.filter(**filter).distinct()}
 
-@register.inclusion_tag('zinnia/tags/dummy.html')
-def get_recent_entries(number=5, template='zinnia/tags/recent_entries.html'):
+@register.inclusion_tag('zinnia/tags/dummy.html', takes_context=True)
+def get_recent_entries(context, number=5, template='zinnia/tags/recent_entries.html'):
     """Return the most recent entries"""
+    filter = {}
+    if ZINNIA_BLOG_ACTIVE:
+        blog_slug = context.get('blog').slug
+        filter.update({'blog__slug': blog_slug})
     return {'template': template,
-            'entries': Entry.published.all()[:number]}
+            'entries': Entry.published.filter(**filter)[:number]}
 
-@register.inclusion_tag('zinnia/tags/dummy.html')
-def get_random_entries(number=5, template='zinnia/tags/random_entries.html'):
+@register.inclusion_tag('zinnia/tags/dummy.html', takes_context=True)
+def get_random_entries(context, number=5, template='zinnia/tags/random_entries.html'):
     """Return random entries"""
-    entries = Entry.published.all()
+    filter = {}
+    if ZINNIA_BLOG_ACTIVE:
+        blog_slug = context.get('blog').slug
+        filter.update({'blog__slug': blog_slug})
+    entries = Entry.published.filter(**filter)
     if number > len(entries):
         number = len(entries)
     return {'template': template,
             'entries': sample(entries, number)}
 
-@register.inclusion_tag('zinnia/tags/dummy.html')
-def get_popular_entries(number=5, template='zinnia/tags/popular_entries.html'):
+@register.inclusion_tag('zinnia/tags/dummy.html', takes_context=True)
+def get_popular_entries(context, number=5, template='zinnia/tags/popular_entries.html'):
     """Return popular  entries"""
-    entries_comment = [(e, e.comments.count()) for e in Entry.published.all()]
+    filter = {}
+    if ZINNIA_BLOG_ACTIVE:
+        blog_slug = context.get('blog').slug
+        filter.update({'blog__slug': blog_slug})
+    entries_comment = [(e, e.comments.count()) for e in Entry.published.filter(**filter)]
     entries_comment = sorted(entries_comment, key=lambda x: (x[1], x[0]),
                              reverse=True)[:number]
     entries = [entry for entry, n_comments in entries_comment]
     return {'template': template,
             'entries': entries}
 
-@register.inclusion_tag('zinnia/tags/dummy.html',
-                        takes_context=True)
+@register.inclusion_tag('zinnia/tags/dummy.html', takes_context=True)
 def get_similar_entries(context, number=5, template='zinnia/tags/similar_entries.html'):
     """Return similar entries"""
     global vectors
@@ -93,15 +108,18 @@ def get_similar_entries(context, number=5, template='zinnia/tags/similar_entries
             'entries': entries}
 
 
-@register.inclusion_tag('zinnia/tags/dummy.html')
-def get_archives_entries(template='zinnia/tags/archives_entries.html'):
+@register.inclusion_tag('zinnia/tags/dummy.html', takes_context=True)
+def get_archives_entries(context, template='zinnia/tags/archives_entries.html'):
     """Return archives entries"""
+    filter = {}
+    if ZINNIA_BLOG_ACTIVE:
+        blog_slug = context.get('blog').slug
+        filter.update({'blog__slug': blog_slug})
     return {'template': template,
             'archives': Entry.published.dates('creation_date', 'month',
-                                              order='DESC'),}
+                                order='DESC').filter(**filter),}
 
-@register.inclusion_tag('zinnia/tags/dummy.html',
-                        takes_context=True)
+@register.inclusion_tag('zinnia/tags/dummy.html', takes_context=True)
 def get_calendar_entries(context, year=None, month=None,
                          template='zinnia/tags/calendar.html'):
     """Return an HTML calendar of entries"""
@@ -109,7 +127,7 @@ def get_calendar_entries(context, year=None, month=None,
         date_month = context.get('month') or context.get('day') or datetime.today()
         year, month = date_month.timetuple()[:2]
     
-    blog_slug = context.get('blog_slug')
+    blog = context.get('blog')
     try:
         from zinnia.templatetags.zcalendar import ZinniaCalendar
     except ImportError:
@@ -117,27 +135,32 @@ def get_calendar_entries(context, year=None, month=None,
 
     calendar = ZinniaCalendar()
     current_month = datetime(year, month, 1)
+    
+    filter = {'blog__slug': blog.slug} if blog else {}
+    dates = list(Entry.published.dates('creation_date', 
+        'month').filter(**filter).distinct())
 
-    dates = list(Entry.published.dates('creation_date', 'month'))
-
+    next_month = previous_month = None
     if current_month in dates:
         index = dates.index(current_month)
-        previous_month = dates[index - 1]
-        try:
+        if index > 0:
+            previous_month = dates[index - 1] 
+        if index < len(dates) - 1:
             next_month = dates[index + 1]
-        except IndexError:
-            next_month = None
-    else:
-        previous_month = len(dates) and dates[-1] or None
-        next_month = None
+    elif len(dates):
+        for date in dates:
+            if date < current_month:
+                previous_month = date
+            elif current_month < date:
+                next_month = date
+                break
 
     return {'template': template,
             'next_month': next_month,
             'previous_month': previous_month,
-            'calendar': calendar.formatmonth(year, month, blog_slug = blog_slug)}
+            'calendar': calendar.formatmonth(year, month, blog_slug = blog.slug)}
 
-@register.inclusion_tag('zinnia/tags/dummy.html',
-                        takes_context=True)
+@register.inclusion_tag('zinnia/tags/dummy.html', takes_context=True)
 def zinnia_breadcrumbs(context, separator='/', root_name='Blog',
                        template='zinnia/tags/breadcrumbs.html',):                       
     """Return a breadcrumb for the application"""
@@ -148,7 +171,7 @@ def zinnia_breadcrumbs(context, separator='/', root_name='Blog',
     page_object = context.get('object') or context.get('category') or \
         context.get('tag') or context.get('author') or context.get('blog')
     if ZINNIA_BLOG_ACTIVE:
-        blog_slug = context.get('blog_slug')
+        blog_slug = context.get('blog').slug
     breadcrumbs = retrieve_breadcrumbs(path, page_object, root_name, blog_slug)
 
     return {'template': template,
@@ -165,48 +188,3 @@ def get_gravatar(email, size, rating, default=None):
 
     url = '%s?%s' % (url, urlencode(options))
     return url.replace('&', '&amp;')
-
-class GetBlogNamesNode(Node):
-    """User's blog_names)"""
-    def __init__(self, user):
-        self.user = template.Variable(user)
-
-    def render(self, context):
-        context['blog_names'] = []
-        try:
-            user = self.user.resolve(context)
-        except template.variabledoesnotexist:
-            return ''
-        if not user.is_anonymous():
-            context['blog_names'] = [blog.blog_name for blog in user.blog_set.all()]
-        return ''
-
-class ShowContentNode(Node):
-    """Add a context variable if we have to reduce the length of an entry"""
-    def __init__(self, object):
-        self.object = template.Variable(object)
-
-    def render(self, context):
-        try:
-            object = self.object.resolve(context)
-        except template.variabledoesnotexist:
-            return ''
-        context['acortar'] = len(object.content) > 100
-
-
-@register.tag(name="show_content")
-def show_content(parser, token):
-    try:
-        templatetag_name, object = token.split_contents()
-    except ValueError:
-        raise template.TemplateSyntaxError, "%r tag requires exactly two arguments" % token.contents.split()[0]
-    return ShowContentNode(object)
-
-@register.tag(name="get_blog_names")
-def get_blog_names(parser, token):
-    try:
-        templatetag_name, user = token.split_contents()
-    except ValueError:
-        raise template.TemplateSyntaxError, "%r tag requires exactly two arguments" % token.contents.split()[0]
-    return GetBlogNamesNode(user)
-

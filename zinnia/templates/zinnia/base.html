@@ -29,7 +29,7 @@
   <ul>
     {% for tag in tag_cloud %}
     <li>
-      <a href="{% url zinnia_tag_detail tag.name %}" title="{{ tag.count }} {% trans "entries" %}" class="tag_{{ tag.font_size }}">
+      <a href="{% if blog %}{% url zinnia_tag_detail blog.slug tag.name %}{% else %}{% url zinnia_tag_detail blog.slug tag.name %}{% endif %}" title="{{ tag.count }} {% trans "entries" %}" class="tag_{{ tag.font_size }}">
 	{{ tag }}
       </a>
     </li>

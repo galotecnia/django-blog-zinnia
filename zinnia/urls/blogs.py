@@ -13,13 +13,6 @@ blog_index =   {'queryset': Blog.objects.all(),
                 'extra_context': {'default_list': True, 'read_more': True},
                }
 
-blog_index_no_content = {'queryset': Blog.objects.all(),
-                'paginate_by': PAGINATION,
-                'template_name': 'zinnia/blog_list.html',
-                'extra_context': {'default_list': False, 'read_more': True},
-               }
-
 urlpatterns = patterns('',
                         url(r'^$', object_list, blog_index, name='blogs'),                  
-                        url(r'^list/', object_list, blog_index_no_content, name='blog_list'), 
                         )

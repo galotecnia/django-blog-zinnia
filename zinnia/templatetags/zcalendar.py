@@ -1,12 +1,16 @@
 """Calendar module for Zinnia templatetags"""
 from datetime import date
 from calendar import LocaleHTMLCalendar
-
 from django.core.urlresolvers import reverse
 
 from zinnia.models import Entry
+from zinnia.models import Blog
+from zinnia.settings import ZINNIA_BLOG_ACTIVE
 
-day_reverse = lambda day_date, slug: reverse('zinnia_entry_archive_day', args=[slug, day_date.strftime('%Y'), day_date.strftime('%m'), day_date.strftime('%d')]) if slug else reverse('zinnia_entry_archive_day', args=[day_date.strftime('%Y'), day_date.strftime('%m'), day_date.strftime('%d')])
+day_reverse = lambda day_date, slug: reverse('zinnia_entry_archive_day', \
+    args=[slug, day_date.strftime('%Y'), day_date.strftime('%m'), day_date.strftime('%d')]) \
+    if slug else reverse('zinnia_entry_archive_day', \
+    args=[day_date.strftime('%Y'), day_date.strftime('%m'), day_date.strftime('%d')])
 
 class ZinniaCalendar(LocaleHTMLCalendar):
     """Override of LocaleHTMLCalendar"""
@@ -24,9 +28,11 @@ class ZinniaCalendar(LocaleHTMLCalendar):
         self.blog_slug = blog_slug
         self.current_year = theyear
         self.current_month = themonth
+        filter = {'creation_date__year': theyear, 'creation_date__month': themonth}
+        if blog_slug: 
+            filter.update({'blog__slug': blog_slug})
         self.day_entries = [entries.creation_date.day for entries in
-                            Entry.published.filter(creation_date__year=theyear,
-                                                   creation_date__month=themonth)]
+                            Entry.published.filter(**filter)]
 
         return super(ZinniaCalendar, self).formatmonth(theyear, themonth, withyear)
 

@@ -17,6 +17,7 @@ from zinnia.managers import EntryPublishedManager
 from zinnia.managers import DRAFT, HIDDEN, PUBLISHED
 from zinnia.settings import USE_BITLY
 from zinnia.settings import UPLOAD_TO
+from zinnia.settings import ZINNIA_BLOG_ACTIVE
 
 
 class Blog(models.Model):
@@ -40,10 +41,17 @@ class Category(models.Model):
     slug = models.SlugField(help_text=_('used for publication'))
     description = models.TextField(_('description'), blank=True)
 
+    def entries_published_set(self):
+        """Return only the entries published"""
+        return entries_published(self.entry_set)
+
     def entries_published_set(self, blog_slug):
         """Return only the entries published"""
-        return entries_published(self.entry_set.all(), blog_slug)
-
+        filter = {}
+        if ZINNIA_BLOG_ACTIVE:
+            filter.update({'blog__slug': blog_slug})
+        return entries_published(self.entry_set.filter(**filter))
+    
     def __unicode__(self):
         return self.title
 
@@ -104,7 +112,7 @@ class Entry(models.Model):
         return self.content
 
     @property
-    def previous_entry(self):
+    def previous_entry(self):   # FIXME: PUBLISHED FILTER
         """Return the previous entry"""
         entries = Entry.published.filter(
             creation_date__lt=self.creation_date)
@@ -112,7 +120,7 @@ class Entry(models.Model):
             return entries[0]
 
     @property
-    def next_entry(self):
+    def next_entry(self):   # FIXME: PUBLISHED FILTER
         """Return the next entry"""
         entries = Entry.published.filter(
             creation_date__gt=self.creation_date).order_by('creation_date')
@@ -136,7 +144,7 @@ class Entry(models.Model):
         return self.is_actual and self.status == PUBLISHED
 
     @property
-    def related_published_set(self):
+    def related_published_set(self):   # FIXME: PUBLISHED FILTER
         """Return only related entries published"""
         return entries_published(self.related)
 
@@ -169,12 +177,15 @@ class Entry(models.Model):
 
     @models.permalink
     def get_absolute_url(self):
-        return ('zinnia_entry_detail', (), {
-            'blog_slug': self.blog.blog_name, 
+        args = {
             'year': self.creation_date.strftime('%Y'),
             'month': self.creation_date.strftime('%m'),
             'day': self.creation_date.strftime('%d'),
-            'slug': self.slug})
+            'slug': self.slug
+        }
+        if ZINNIA_BLOG_ACTIVE:
+            args.update({'blog_slug': self.blog.blog_name})
+        return ('zinnia_entry_detail', (), args)
 
     class Meta:
         ordering = ['-creation_date']
