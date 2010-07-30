@@ -1,5 +1,5 @@
 {% extends "zinnia/base.html" %}
-{% load i18n tagging_tags comments zinnia_tags %}
+{% load i18n tagging_tags zinnia_tags comments %}
 
 {% block title %}{{ object.title }}{% endblock %}
 
@@ -104,7 +104,11 @@
 
 {% if object.comment_enabled %}
 <div class="commentForm span-16 last">
-  {% render_comment_form for object %}
+    {% if ZINNIA_BLOG_ACTIVE %}
+        {% render_comment_blog_form object blog %}
+    {% else %}
+        {% render_comment_form for object %}
+    {% endif %}
 </div>
 {% endif %}
 

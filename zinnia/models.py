@@ -41,11 +41,7 @@ class Category(models.Model):
     slug = models.SlugField(help_text=_('used for publication'))
     description = models.TextField(_('description'), blank=True)
 
-    def entries_published_set(self):
-        """Return only the entries published"""
-        return entries_published(self.entry_set)
-
-    def entries_published_set(self, blog_slug):
+    def entries_published_set(self, blog_slug=''):
         """Return only the entries published"""
         filter = {}
         if ZINNIA_BLOG_ACTIVE:

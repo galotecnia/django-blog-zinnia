@@ -39,4 +39,7 @@ urlpatterns = patterns('zinnia.views.entries',
                        entry_conf, name='zinnia_entry_archive_day'),
                     url(r'^(?P<year>\d{4})/(?P<month>\d{2})/(?P<day>\d{2})/(?P<slug>[-\w]+)/$',
                         'entry_detail', entry_conf_detail, name='zinnia_entry_detail'),
+                    url(r'^comments/post/$',    'zinnia_post_comment', name='post_comment'),
+                    url(r'^comments/posted/$',  'zinnia_comment_done', name='comments-comment-done'),
+
 )

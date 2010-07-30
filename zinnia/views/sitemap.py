@@ -18,7 +18,7 @@ def sitemap(*ka, **kw):
         blog = get_object_or_404(Blog, slug=blog_slug)
         entry_filter = {'blog__slug': blog_slug}
         category_filter = {'entry__blog__slug': blog_slug}            
-        extra_context.update({'blog': blog})
+        extra_context.update({'blog': blog, 'filters': entry_filter})
     entries = Entry.published.filter(**entry_filter)
     categories = Category.objects.filter(**category_filter).distinct()
     extra_context.update({'entries': entries, 'categories': categories})    

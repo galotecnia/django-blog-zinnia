@@ -36,7 +36,7 @@
 	  </a> | 
         {% block rss_link %}
         <a href="{% if ZINNIA_BLOG_ACTIVE %}
-            {% url zinnia_entry_latest_feed blog.slug %}{% else %}{% url zinnia_entry_latest %}
+            {% url zinnia_entry_latest_feed blog.slug %}{% else %}{% url zinnia_entry_latest_feed %}
             {% endif %}" 
             title="{% trans "RSS Feed of lastest entries" %}" class="link feeds">
             {% trans "RSS Feed" %}

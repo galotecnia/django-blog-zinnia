@@ -10,6 +10,8 @@ from datetime import datetime
 
 from django.template import Library
 from django.template import Node
+from django.contrib.comments.templatetags.comments import CommentFormNode
+from django.template.loader import render_to_string
 
 from django import template
 
@@ -18,6 +20,7 @@ from zinnia.models import Entry
 from zinnia.models import Category
 from zinnia.comparison import VectorBuilder
 from zinnia.comparison import pearson_score
+from tagging.models import Tag
 
 register = Library()
 
@@ -29,11 +32,17 @@ cache_entries_related = {}
 def get_categories(context, template='zinnia/tags/categories.html'):
     """Return the categories"""
     filter = {}
+    blog_slug = ''
     if ZINNIA_BLOG_ACTIVE:
         blog_slug = context.get('blog').slug
         filter.update({'entry__blog__slug': blog_slug})
+    categories = []
+    for cat in Category.objects.filter(**filter).distinct():
+        cat_dict = {'category': cat, 
+                    'entry_count': len(cat.entries_published_set(blog_slug))}
+        categories.append(cat_dict)
     return {'template': template,
-            'categories': Category.objects.filter(**filter).distinct()}
+            'categories': categories}
 
 @register.inclusion_tag('zinnia/tags/dummy.html', takes_context=True)
 def get_recent_entries(context, number=5, template='zinnia/tags/recent_entries.html'):
@@ -112,12 +121,15 @@ def get_similar_entries(context, number=5, template='zinnia/tags/similar_entries
 def get_archives_entries(context, template='zinnia/tags/archives_entries.html'):
     """Return archives entries"""
     filter = {}
+    out = {'template': template, 'ZINNIA_BLOG_ACTIVE': ZINNIA_BLOG_ACTIVE}
     if ZINNIA_BLOG_ACTIVE:
-        blog_slug = context.get('blog').slug
-        filter.update({'blog__slug': blog_slug})
-    return {'template': template,
-            'archives': Entry.published.dates('creation_date', 'month',
-                                order='DESC').filter(**filter),}
+        blog = context.get('blog')
+        filter.update({'blog__slug': blog.slug})
+        out.update({'blog': blog})
+    out.update({'archives': Entry.published.dates('creation_date', 'month',
+                                order='DESC').filter(**filter)})
+    print out
+    return out
 
 @register.inclusion_tag('zinnia/tags/dummy.html', takes_context=True)
 def get_calendar_entries(context, year=None, month=None,
@@ -135,8 +147,12 @@ def get_calendar_entries(context, year=None, month=None,
 
     calendar = ZinniaCalendar()
     current_month = datetime(year, month, 1)
-    
-    filter = {'blog__slug': blog.slug} if blog else {}
+   
+    filter = {}
+    blog_slug = None
+    if blog:
+        blog_slug = blog.slug
+        filter = {'blog__slug': blog_slug}
     dates = list(Entry.published.dates('creation_date', 
         'month').filter(**filter).distinct())
 
@@ -158,7 +174,7 @@ def get_calendar_entries(context, year=None, month=None,
     return {'template': template,
             'next_month': next_month,
             'previous_month': previous_month,
-            'calendar': calendar.formatmonth(year, month, blog_slug = blog.slug)}
+            'calendar': calendar.formatmonth(year, month, blog_slug = blog_slug)}
 
 @register.inclusion_tag('zinnia/tags/dummy.html', takes_context=True)
 def zinnia_breadcrumbs(context, separator='/', root_name='Blog',
@@ -188,3 +204,62 @@ def get_gravatar(email, size, rating, default=None):
 
     url = '%s?%s' % (url, urlencode(options))
     return url.replace('&', '&amp;')
+
+class EntryTagCloudNode(Node):
+    """Tag related to an entry"""
+
+    def __init__(self, filters):
+        self.filters = template.Variable(filters)
+
+    def render(self, context):
+        try:
+            filters = self.filters.resolve(context)
+        except template.variabledoesnotexist:
+            context['entries_tag_cloud'] = []
+            return ''
+        context['tag_cloud'] = Tag.objects.cloud_for_model(Entry, steps=6, filters = filters)
+        return ''
+
+def entry_tag_cloud(parser, token):
+    try:
+        templatetag_name, filters = token.split_contents()
+    except ValueError:
+        raise template.TemplateSyntaxError, "%r tag requires exactly two arguments" % token.contents.split()[0]
+    return EntryTagCloudNode(filters)
+
+register.tag(entry_tag_cloud)
+
+class RenderCommentFormNode(CommentFormNode):
+    """Return a comment form using blog owner dependences"""
+
+    def __init__(self, object_expr, blog=''):
+        self.object_expr = template.Variable(object_expr)
+        self.blog = template.Variable(blog)
+
+    def render(self, context):
+        try:
+            object_expr = self.object_expr.resolve(context)
+            blog = self.blog.resolve(context)
+        except template.VariableDoesNotExist:
+            return ''
+        ctype, object_pk = self.get_target_ctype_pk(context)
+        if object_pk:
+            template_search_list = [
+                "comments/form.html"
+            ]
+            context.push()
+            formstr = render_to_string(template_search_list, {"form" : self.get_form(context)}, context)
+            context.pop()
+            return formstr
+        else:
+            return ''
+
+# render's func block
+def render_comment_blog_form(parser, token):
+    try:
+        templatetag_name, object_expr, blog = token.split_contents()
+    except ValueError:
+        raise template.TemplateSyntaxError, "%r tag requires exactly two arguments" % token.contents.split()[0]
+    return RenderCommentFormNode(object_expr, blog)
+
+register.tag(render_comment_blog_form)

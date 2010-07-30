@@ -8,13 +8,19 @@
 {% block sidebar %}
 <div class="search">
   <h3>{% trans "Search" %}</h3>
-  <form method="get" id="searchform" action="{% url zinnia_entry_search %}">
+  <form method="get" id="searchform" action="{% if ZINNIA_BLOG_ACTIVE %}{% url zinnia_entry_search blog.slug %}{% else %}{% url zinnia_entry_search %}{% endif %}">
     <p>
       <input type="text" value="{% trans "Keywords..." %}" name="pattern" id="searchbox" onfocus="this.value=''"/>
       <input type="submit" class="submitbutton" value="OK" />
     </p>
   </form>
 </div>
+{% if ZINNIA_BLOG_ACTIVE %}
+    <div class="blogs">
+        <h3>{% trans "Blog's list" %}</h3>
+        <ul><li><a href="{% url blogs %}">Blogs</a></li></ul>
+    </div> 
+{% endif %}
 <div class="categories">
   <h3>{% trans "Categories" %}</h3>
   {% get_categories %}
@@ -25,11 +31,15 @@
 </div>
 <div class="tags">
   <h3>{% trans "Tags" %}</h3>
-  {% tag_cloud_for_model zinnia.entry as tag_cloud with steps=6 %}
+    {% if filters %}
+        {% entry_tag_cloud filters %}
+    {% else %}
+        {% tag_cloud_for_model zinnia.entry as tag_cloud with steps=6 %}
+    {% endif %}
   <ul>
     {% for tag in tag_cloud %}
     <li>
-      <a href="{% if blog %}{% url zinnia_tag_detail blog.slug tag.name %}{% else %}{% url zinnia_tag_detail blog.slug tag.name %}{% endif %}" title="{{ tag.count }} {% trans "entries" %}" class="tag_{{ tag.font_size }}">
+      <a href="{% if blog %}{% url zinnia_tag_detail blog.slug tag.name %}{% else %}{% url zinnia_tag_detail tag.name %}{% endif %}" title="{{ tag.count }} {% trans "entries" %}" class="tag_{{ tag.font_size }}">
 	{{ tag }}
       </a>
     </li>

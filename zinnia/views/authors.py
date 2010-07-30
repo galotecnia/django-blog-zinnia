@@ -27,8 +27,8 @@ def author_detail(request, **kwargs):
         # We check if author is a blog author
         if author not in blog.authors.all():
             raise Http404('User not valid')
-        extra_context.update({'blog_slug': blog_slug, 'blog': blog})
         filter = {'blog__slug': blog_slug}
+        extra_context.update({'blog': blog, 'filters': filter})
     queryset = entries_published(author.entry_set).filter(**filter)
     return object_list(request, queryset=queryset, paginate_by=PAGINATION, 
                         page=page, extra_context=extra_context)

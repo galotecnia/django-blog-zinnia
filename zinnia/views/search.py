@@ -32,7 +32,7 @@ def entry_search(request, **kwargs):
                    'pattern': pattern,
                   }
     if ZINNIA_BLOG_ACTIVE:
-        extra_context.update({'blog': blog})
+        extra_context.update({'blog': blog, 'filters':{'blog__slug': blog.slug}})
 
     return object_list(request, queryset=entries,
                        template_name='zinnia/entry_search.html',

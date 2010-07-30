@@ -15,7 +15,7 @@ def tag_list(request, **kwargs):
         blog_slug = kwargs.pop('blog_slug')
         blog = get_object_or_404(Blog, slug = blog_slug)
         kwargs['queryset'] = tags_published(blog_slug)
-        kwargs['extra_context'] = {'blog': blog}
+        kwargs['extra_context'] = {'blog': blog, 'filters': {'blog__slug': blog_slug}}
     return object_list(request, **kwargs)
 
 tag_detail = update_queryset(tagged_object_list, Entry.published.all,

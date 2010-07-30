@@ -18,7 +18,7 @@ def update_queryset(view, queryset, queryset_parameter='queryset'):
                 filter.update({'blog__slug': blog_slug})
                 blog = get_object_or_404(Blog, slug = blog_slug)
                 # blog_slug added as a context variable
-                kwargs['extra_context'] = {'blog_slug': blog_slug, 'blog': blog}
+                kwargs['extra_context'] = {'blog': blog, 'filters': {'blog__slug': blog_slug}}
         kwargs[queryset_parameter] = queryset().filter(**filter)
         return view(*args, **kwargs)
     return wrap

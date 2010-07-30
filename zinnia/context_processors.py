@@ -16,9 +16,12 @@ def blog_active(request):
     return {'ZINNIA_BLOG_ACTIVE': ZINNIA_BLOG_ACTIVE}
 
 def blog_slug(request):
-    """Add a blog_owner context variable and filter dict if it is found in request.session"""
+    """
+        Add a blog_owner context variable and filter dict if it is found in request.session
+        Needed in comment post and previw methods
+    """
     out = {}
-    if 'blog_slug' in request.session.keys():
-        out['blog_slug'] = request.session.pop('blog_slug')
-        out['filter'] = {'blog__slug': out['blog_slug']}
+    if 'blog' in request.session.keys():
+        out['blog'] = request.session.pop('blog')
+        out['filter'] = {'blog__slug': out['blog'].slug}
     return out

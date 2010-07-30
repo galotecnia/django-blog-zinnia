@@ -2,7 +2,7 @@
 {% for date in archives %}
     {% if ZINNIA_BLOG_ACTIVE %}
         <link rel="archives" title="{% trans "Archives" %} {{ date|date:"F Y"|capfirst }}"
-        href='{% url zinnia_entry_archive_month blog_slug date|date:"Y" date|date:"m" %}' />
+        href='{% url zinnia_entry_archive_month blog.slug date|date:"Y" date|date:"m" %}' />
     {% else %}
         <link rel="archives" title="{% trans "Archives" %} {{ date|date:"F Y"|capfirst }}"
         href='{% url zinnia_entry_archive_month date|date:"Y" date|date:"m" %}' />
