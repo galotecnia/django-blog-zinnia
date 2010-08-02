@@ -1,22 +1,21 @@
 {% load comments i18n %}
-<form action="/blog{% if ZINNIA_BLOG_ACTIVE %}/{{ blog.slug}}/entries{% endif %}{% comment_form_target %}" method="post">{% csrf_token %}
-  <table>
+<p/>
+<table>
+<form action="/blog{% if blog %}/{{ blog.slug}}/entries{% endif %}{% comment_form_target %}" method="post">{% csrf_token %}
   {% if next %}<input type="hidden" name="next" value="{{ next }}" />{% endif %}
   {% for field in form %}
     {% if field.is_hidden %}
       {{ field }}
     {% else %}
       {% if field.errors %}{{ field.errors }}{% endif %}
-      <tr
-        {% if field.errors %} class="error"{% endif %}
-        {% ifequal field.name "honeypot" %} style='display:none;'{% endifequal %}>
+      <tr{% if field.errors %} class="error"{% endif %}{% ifequal field.name "honeypot" %} style='display:none;'{% endifequal %}>
         <td>{{ field.label_tag }}</td><td>{{ field }}</td>
       </tr>
     {% endif %}
   {% endfor %}
-  </table>
-  <p class="submit">
+  <tr><td colspan="2">
     <input type="submit" name="post" class="button" value="{% trans 'Post' %}" />
     <input type="submit" name="preview" class="button" value="{% trans 'Preview' %}" />
-  </p>
+  </td></tr>
 </form>
+</table>
