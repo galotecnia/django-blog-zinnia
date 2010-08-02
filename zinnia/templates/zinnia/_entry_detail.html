@@ -9,16 +9,17 @@
   <p class="entryInfo">
     {% trans "Written by" %} 
     {% for author in object.authors.all %}
-    <a href="{% url zinnia_author_detail author %}" title="{% blocktrans with author as author %}Show {{ author }} entries{% endblocktrans %}">
+    <a href="{% if ZINNIA_BLOG_ACTIVE %}{% url zinnia_author_detail blog.slug author %}{% else %}{% url zinnia_author_detail author %}{% endif %}" 
+        title="{% blocktrans with author as author %}Show {{ author }} entries{% endblocktrans %}">
       <strong>{{ author }}</strong>
     </a>{% if not forloop.last %}, {% endif %}
     {% endfor %}
     {% trans "on date" %} {{ object.creation_date|date:"d F Y"|capfirst }}
     {% trans "in" %} 
     {% for category in object.categories.all %}
-    <a href="{{ category.get_absolute_url }}" title="{{ category }}">
-      <em>{{ category }}</em>
-    </a>
+    <a href="{% if ZINNIA_BLOG_ACTIVE %}{% url zinnia_category_detail blog.slug category.slug %}
+            {% else %}{% url zinnia_category_detail category.slug %}{% endif %}"
+        title="{{ category }}"><em>{{ category }}</em></a>
     {% if not forloop.last %}, {% endif %}
     {% endfor %}.
   </p>
@@ -44,7 +45,7 @@
     <strong>{% trans "Tags" %}</strong> :
     {% tags_for_object object as tag_list %}
     {% for tag in tag_list %}  
-    <a href="{% url zinnia_tag_detail tag %}" title="Tag {{ tag }}">
+    <a href="{% if ZINNIA_BLOG_ACTIVE %}{% url zinnia_tag_detail blog.slug tag %}{% else %}{% url zinnia_tag_detail tag %}{% endif %}" title="Tag {{ tag }}">
       {{ tag }}
     </a>
     {% empty %}

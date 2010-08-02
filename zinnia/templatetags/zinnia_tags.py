@@ -122,13 +122,12 @@ def get_archives_entries(context, template='zinnia/tags/archives_entries.html'):
     """Return archives entries"""
     filter = {}
     out = {'template': template, 'ZINNIA_BLOG_ACTIVE': ZINNIA_BLOG_ACTIVE}
-    if ZINNIA_BLOG_ACTIVE:
-        blog = context.get('blog')
+    blog = context.get('blog')
+    if ZINNIA_BLOG_ACTIVE and blog != None:
         filter.update({'blog__slug': blog.slug})
         out.update({'blog': blog})
     out.update({'archives': Entry.published.dates('creation_date', 'month',
                                 order='DESC').filter(**filter)})
-    print out
     return out
 
 @register.inclusion_tag('zinnia/tags/dummy.html', takes_context=True)
@@ -170,11 +169,15 @@ def get_calendar_entries(context, year=None, month=None,
             elif current_month < date:
                 next_month = date
                 break
-
-    return {'template': template,
+    out = { 'template': template,
             'next_month': next_month,
             'previous_month': previous_month,
-            'calendar': calendar.formatmonth(year, month, blog_slug = blog_slug)}
+            'calendar': calendar.formatmonth(year, month, blog_slug = blog_slug),
+            'ZINNIA_BLOG_ACTIVE': ZINNIA_BLOG_ACTIVE,
+          }
+    if blog:
+        out.update({'blog': blog})
+    return out
 
 @register.inclusion_tag('zinnia/tags/dummy.html', takes_context=True)
 def zinnia_breadcrumbs(context, separator='/', root_name='Blog',
