@@ -8,7 +8,7 @@
 {% block sidebar %}
 <div class="search">
   <h3>{% trans "Search" %}</h3>
-  <form method="get" id="searchform" action="{% if ZINNIA_BLOG_ACTIVE %}{% url zinnia_entry_search blog.slug %}{% else %}{% url zinnia_entry_search %}{% endif %}">
+  <form method="get" id="searchform" action="{% if blog %}{% url zinnia_entry_search blog.slug %}{% else %}{% url zinnia_entry_search %}{% endif %}">
     <p>
       <input type="text" value="{% trans "Keywords..." %}" name="pattern" id="searchbox" onfocus="this.value=''"/>
       <input type="submit" class="submitbutton" value="OK" />

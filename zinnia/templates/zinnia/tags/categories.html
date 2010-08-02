@@ -2,7 +2,7 @@
 <ul>
   {% for category in categories %}
   <li>
-    <a href="{{ category.0.get_absolute_url }}" title="{{ category.0.title }}">{{ category.0.title }}</a>
+    <a href="{{ category.category.get_absolute_url }}" title="{{ category.category.title }}">{{ category.category.title }}</a>
     {% with category.entry_count as entry_count %}
         {% blocktrans count entry_count as entry_count %}{{ entry_count }} entry{% plural %}{{ entry_count }} entries{% endblocktrans %}
     {% endwith %}

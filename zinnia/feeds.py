@@ -18,8 +18,6 @@ from zinnia.models import Entry
 from zinnia.models import Category
 from zinnia.managers import entries_published
 from zinnia.settings import COPYRIGHT
-from zinnia.settings import ZINNIA_BLOG_ACTIVE
-
 
 current_site = Site.objects.get_current()
 
@@ -42,10 +40,7 @@ class EntryFeed(Feed):
     description_template= 'feeds/entry_description.html'
     feed_copyright = COPYRIGHT
 
-    def get_object(self, request):
-        return self
-
-    def get_object(self, request, blog_slug):
+    def get_object(self, request, blog_slug=''):
         self.blog_slug = blog_slug
         return self
 
@@ -93,13 +88,13 @@ class LatestEntries(EntryFeed):
     description = _('The latest entries for the site %s') % current_site.domain
 
     def link(self):
-        if ZINNIA_BLOG_ACTIVE:
+        if self.blog_slug:
             return reverse('zinnia_entry_archive_index', args=[self.blog_slug])
         return reverse('zinnia_entry_archive_index')
 
     def items(self):
         filter = {}
-        if ZINNIA_BLOG_ACTIVE:
+        if self.blog_slug:
             filter.update({'blog__slug': self.blog_slug})
         return Entry.published.filter(**filter)
 
@@ -112,13 +107,13 @@ class CategoryEntries(EntryFeed):
 
     def items(self, obj):
         blog_slug = ''
-        if ZINNIA_BLOG_ACTIVE:
+        if self.blog_slug:
             blog_slug = self.blog_slug
         return obj.entries_published_set(blog_slug)
 
     def link(self, obj):
         blog_slug = ''
-        if ZINNIA_BLOG_ACTIVE:
+        if self.blog_slug:
             blog_slug = self.blog_slug
         return obj.get_absolute_url(blog_slug)
 
@@ -137,7 +132,7 @@ class AuthorEntries(EntryFeed):
 
     def items(self, obj):
         queryset = obj.entry_set
-        if ZINNIA_BLOG_ACTIVE:
+        if self.blog_slug:
             queryset = obj.entry_set.filter(blog__slug = self.blog_slug)
         return entries_published(queryset)
 
@@ -159,7 +154,7 @@ class TagEntries(EntryFeed):
 
     def items(self, obj):
         filter = {}
-        if ZINNIA_BLOG_ACTIVE:
+        if self.blog_slug:
             filter.update({'blog__slug': self.blog_slug})
         return TaggedItem.objects.get_by_model(Entry.published.filter(**filter), obj)
 
@@ -181,13 +176,13 @@ class SearchEntries(EntryFeed):
 
     def items(self, obj):
         blog_slug = ''
-        if ZINNIA_BLOG_ACTIVE:
+        if self.blog_slug:
             blog_slug = self.blog_slug
         return Entry.published.search(obj, blog_slug)
 
     def link(self, obj):
         url = reverse('zinnia_entry_search')
-        if ZINNIA_BLOG_ACTIVE:
+        if self.blog_slug:
             url = reverse('zinnia_entry_search', args = [self.blog_slug])
         return '%s?pattern=%s' % (url, obj)
 

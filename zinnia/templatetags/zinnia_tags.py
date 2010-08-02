@@ -33,8 +33,9 @@ def get_categories(context, template='zinnia/tags/categories.html'):
     """Return the categories"""
     filter = {}
     blog_slug = ''
-    if ZINNIA_BLOG_ACTIVE:
-        blog_slug = context.get('blog').slug
+    blog = context.get('blog')
+    if ZINNIA_BLOG_ACTIVE and blog:
+        blog_slug = blog.slug
         filter.update({'entry__blog__slug': blog_slug})
     categories = []
     for cat in Category.objects.filter(**filter).distinct():
@@ -48,9 +49,9 @@ def get_categories(context, template='zinnia/tags/categories.html'):
 def get_recent_entries(context, number=5, template='zinnia/tags/recent_entries.html'):
     """Return the most recent entries"""
     filter = {}
-    if ZINNIA_BLOG_ACTIVE:
-        blog_slug = context.get('blog').slug
-        filter.update({'blog__slug': blog_slug})
+    blog = context.get('blog')
+    if ZINNIA_BLOG_ACTIVE and blog:
+        filter.update({'blog__slug': blog.slug})
     return {'template': template,
             'entries': Entry.published.filter(**filter)[:number]}
 
@@ -58,9 +59,9 @@ def get_recent_entries(context, number=5, template='zinnia/tags/recent_entries.h
 def get_random_entries(context, number=5, template='zinnia/tags/random_entries.html'):
     """Return random entries"""
     filter = {}
-    if ZINNIA_BLOG_ACTIVE:
-        blog_slug = context.get('blog').slug
-        filter.update({'blog__slug': blog_slug})
+    blog = context.get('blog')
+    if ZINNIA_BLOG_ACTIVE and blog:
+        filter.update({'blog__slug': blog.slug})
     entries = Entry.published.filter(**filter)
     if number > len(entries):
         number = len(entries)
@@ -71,9 +72,9 @@ def get_random_entries(context, number=5, template='zinnia/tags/random_entries.h
 def get_popular_entries(context, number=5, template='zinnia/tags/popular_entries.html'):
     """Return popular  entries"""
     filter = {}
-    if ZINNIA_BLOG_ACTIVE:
-        blog_slug = context.get('blog').slug
-        filter.update({'blog__slug': blog_slug})
+    blog = context.get('blog')
+    if ZINNIA_BLOG_ACTIVE and blog:
+        filter.update({'blog__slug': blog.slug})
     entries_comment = [(e, e.comments.count()) for e in Entry.published.filter(**filter)]
     entries_comment = sorted(entries_comment, key=lambda x: (x[1], x[0]),
                              reverse=True)[:number]
@@ -123,7 +124,7 @@ def get_archives_entries(context, template='zinnia/tags/archives_entries.html'):
     filter = {}
     out = {'template': template, 'ZINNIA_BLOG_ACTIVE': ZINNIA_BLOG_ACTIVE}
     blog = context.get('blog')
-    if ZINNIA_BLOG_ACTIVE and blog != None:
+    if ZINNIA_BLOG_ACTIVE and blog:
         filter.update({'blog__slug': blog.slug})
         out.update({'blog': blog})
     out.update({'archives': Entry.published.dates('creation_date', 'month',
@@ -189,8 +190,9 @@ def zinnia_breadcrumbs(context, separator='/', root_name='Blog',
     path = context['request'].path
     page_object = context.get('object') or context.get('category') or \
         context.get('tag') or context.get('author') or context.get('blog')
-    if ZINNIA_BLOG_ACTIVE:
-        blog_slug = context.get('blog').slug
+    blog = context.get('blog')
+    if ZINNIA_BLOG_ACTIVE and blog:
+        blog_slug = blog.slug
     breadcrumbs = retrieve_breadcrumbs(path, page_object, root_name, blog_slug)
 
     return {'template': template,

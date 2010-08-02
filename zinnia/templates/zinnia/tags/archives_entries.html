@@ -2,7 +2,7 @@
 <ul>
   {% for date in archives %}
   <li>
-    <a title='{% trans "Archives" %} {{ date|date:"F Y"|capfirst }}' href='{% if ZINNIA_BLOG_ACTIVE %}
+    <a title='{% trans "Archives" %} {{ date|date:"F Y"|capfirst }}' href='{% if blog %}
         {% url zinnia_entry_archive_month blog.slug date|date:"Y" date|date:"m" %}
         {% else %}{% url zinnia_entry_archive_month date|date:"Y" date|date:"m" %}
         {% endif %}'>{{ date|date:"F Y"|capfirst }}</a> 

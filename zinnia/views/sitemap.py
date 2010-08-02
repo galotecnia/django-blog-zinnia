@@ -13,9 +13,9 @@ def sitemap(*ka, **kw):
     entry_filter = {}
     category_filter = {}
     extra_context = {}
-    if ZINNIA_BLOG_ACTIVE:
-        blog_slug = kw.pop('blog_slug')
-        blog = get_object_or_404(Blog, slug=blog_slug)
+    if ZINNIA_BLOG_ACTIVE and 'blog' in kw and kw['blog']:
+        blog = kw.pop('blog')
+        blog_slug = blog.slug
         entry_filter = {'blog__slug': blog_slug}
         category_filter = {'entry__blog__slug': blog_slug}            
         extra_context.update({'blog': blog, 'filters': entry_filter})

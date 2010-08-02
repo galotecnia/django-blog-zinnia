@@ -16,7 +16,7 @@
         {% if ZINNIA_BLOG_ACTIVE %}
             <a href="{% url zinnia_entry_archive_index object.slug %}">{{ object.blog_name }} blog</a> 
         {% else %}
-            <a href="{% url zinnia_entry_archive_index %}">Another Zinnia blog</a> 
+            <a href="{% url zinnia_entry_archive_index %}">Another Zinnia blog ({{ forloop.counter }})</a> 
         {% endif %}
         {% if default_list %}
             <ul>
