@@ -37,5 +37,5 @@ TWITTER_USER = getattr(settings, 'TWITTER_USER', '')
 TWITTER_PASSWORD = getattr(settings, 'TWITTER_PASSWORD', '')
 
 # Blog_slug pattern
-ZINNIA_BLOG_PATTERN = "[-\w ]+"
-ZINNIA_BLOG_ACTIVE = True # Default, set False to use basic zinnia app
+ZINNIA_BLOG_PATTERN = getattr(settings, 'ZINNIA_BLOG_PATTERN', "[-\w ]+")
+ZINNIA_BLOG_ACTIVE = getattr(settings, 'ZINNIA_BLOG_ACTIVE', True) # Default, set False to use basic zinnia app
