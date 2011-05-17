@@ -180,7 +180,7 @@ class Entry(models.Model):
             'slug': self.slug
         }
         if ZINNIA_BLOG_ACTIVE:
-            args.update({'blog_slug': self.blog.blog_name})
+            args.update({'blog_slug': self.blog.slug})
         return ('zinnia_entry_detail', (), args)
 
     class Meta:
